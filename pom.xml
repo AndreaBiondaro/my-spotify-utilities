@@ -8,5 +8,31 @@
     <artifactId>my-spotify-utilities</artifactId>
     <version>1.0-SNAPSHOT</version>
 
+    <name>Spotify utilities</name>
+    <description>A Java collection of utilities for performing operations on spotify</description>
+    <url>https://github.com/AndreaBiondaro/my-spotify-utilities</url>
+
+    <developers>
+        <developer>
+            <name>Andrea Biondaro</name>
+            <organization>Andrea Biondaro</organization>
+            <organizationUrl>https://github.com/AndreaBiondaro</organizationUrl>
+            <roles>
+                <role>developer</role>
+                <role>maintainer</role>
+            </roles>
+            <timezone>Europe/Italy</timezone>
+        </developer>
+    </developers>
+
+    <dependencies>
+        <dependency>
+            <groupId>se.michaelthelin.spotify</groupId>
+            <artifactId>spotify-web-api-java</artifactId>
+            <version>6.5.1</version>
+        </dependency>
+    </dependencies>
+
+    <packaging>jar</packaging>
 
 </project>
