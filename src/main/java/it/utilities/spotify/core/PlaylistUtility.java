@@ -19,7 +19,7 @@ public class PlaylistUtility {
     this.requestHandler = requestHandler;
   }
 
-  public List<PlaylistTrack> getDuplicateTrackByName(String playListId)
+  public List<PlaylistTrack> getDuplicatesTracksByName(String playListId)
       throws IOException, SpotifyWebApiException, ParseException {
     final PlaylistTrack[] tracks = this.requestHandler.getPlaylistsItems(playListId).getItems();
 
@@ -48,27 +48,27 @@ public class PlaylistUtility {
   }
 
   /**
-   * Compare the title of two songs while ignoring the case sensitivity.
+   * Compare the name of two playlist items while ignoring the case sensitivity.
    *
-   * @param songOne
-   * @param songTwo
+   * @param firstName
+   * @param secondName
    * @throws NullPointerException if one of the two inputs is null
    * @return <code>true</code> if the two titles are the same or start with the same words, <code>
    *     false</code> otherwise
    */
-  private boolean compareSongTitle(String songOne, String songTwo) {
-    if (songOne.equalsIgnoreCase(songTwo)) {
+  private boolean compareSongTitle(String firstName, String secondName) {
+    if (firstName.equalsIgnoreCase(secondName)) {
       return true;
     }
 
-    String[] songOneWords = songOne.split("\\s+");
-    String[] songTwoWords = songTwo.split("\\s+");
+    String[] firstWords = firstName.split("\\s+");
+    String[] secondWords = secondName.split("\\s+");
 
-    for (int i = 0; i < Math.min(songOneWords.length, songTwoWords.length); i++) {
-      String wordOne = songOneWords[i];
-      String wordTwo = songTwoWords[i];
+    for (int i = 0; i < Math.min(firstWords.length, secondWords.length); i++) {
+      String firstWord = firstWords[i];
+      String secondWord = secondWords[i];
 
-      if (!wordOne.equalsIgnoreCase(wordTwo)) {
+      if (!firstWord.equalsIgnoreCase(secondWord)) {
         return false;
       }
     }
