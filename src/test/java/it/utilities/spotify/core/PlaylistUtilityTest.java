@@ -33,26 +33,28 @@ public class PlaylistUtilityTest {
   }
 
   @Test
-  void testCompareSongTitleNullResponse()
+  void testGetDuplicatesTracksByNameNullResponse()
       throws ParseException, SpotifyWebApiException, IOException {
     when(requestHandler.getPlaylistsItems(anyString())).thenReturn(null);
 
     Assertions.assertThrows(
-        NullPointerException.class, () -> playlistUtility.getDuplicateTrackByName(""));
+        NullPointerException.class, () -> playlistUtility.getDuplicatesTracksByName(""));
   }
 
   @Test
-  void testCompareSongTitleNullItems() throws ParseException, SpotifyWebApiException, IOException {
+  void testGetDuplicatesTracksByNameNullItems()
+      throws ParseException, SpotifyWebApiException, IOException {
     Paging<PlaylistTrack> tracks = new Paging.Builder<PlaylistTrack>().setItems(null).build();
 
     when(requestHandler.getPlaylistsItems(anyString())).thenReturn(tracks);
 
     Assertions.assertThrows(
-        NullPointerException.class, () -> playlistUtility.getDuplicateTrackByName(""));
+        NullPointerException.class, () -> playlistUtility.getDuplicatesTracksByName(""));
   }
 
   @Test
-  void testCompareSongTitleNullTrack() throws ParseException, SpotifyWebApiException, IOException {
+  void testGetDuplicatesTracksByNameNullTrack()
+      throws ParseException, SpotifyWebApiException, IOException {
     PlaylistTrack[] songs = new PlaylistTrack[2];
     songs[0] = new PlaylistTrack.Builder().setTrack(null).build();
     songs[1] = new PlaylistTrack.Builder().setTrack(null).build();
@@ -62,11 +64,12 @@ public class PlaylistUtilityTest {
     when(requestHandler.getPlaylistsItems(anyString())).thenReturn(tracks);
 
     Assertions.assertThrows(
-        NullPointerException.class, () -> playlistUtility.getDuplicateTrackByName(""));
+        NullPointerException.class, () -> playlistUtility.getDuplicatesTracksByName(""));
   }
 
   @Test
-  void testCompareSongTitleNullTitle() throws ParseException, SpotifyWebApiException, IOException {
+  void testGetDuplicatesTracksByNameNullTitle()
+      throws ParseException, SpotifyWebApiException, IOException {
     Track track1 = new Track.Builder().setName(null).build();
     Track track2 = new Track.Builder().setName(null).build();
 
@@ -79,11 +82,11 @@ public class PlaylistUtilityTest {
     when(requestHandler.getPlaylistsItems(anyString())).thenReturn(tracks);
 
     Assertions.assertThrows(
-        NullPointerException.class, () -> playlistUtility.getDuplicateTrackByName(""));
+        NullPointerException.class, () -> playlistUtility.getDuplicatesTracksByName(""));
   }
 
   @Test
-  void testCompareSongTitleNoDuplicates()
+  void testGetDuplicatesTracksByNameNoDuplicates()
       throws ParseException, SpotifyWebApiException, IOException {
     Track track1 = new Track.Builder().setName("Give me").build();
     Track track2 = new Track.Builder().setName("Another way").build();
@@ -98,11 +101,11 @@ public class PlaylistUtilityTest {
 
     when(requestHandler.getPlaylistsItems(anyString())).thenReturn(tracks);
 
-    Assertions.assertTrue(playlistUtility.getDuplicateTrackByName("").isEmpty());
+    Assertions.assertTrue(playlistUtility.getDuplicatesTracksByName("").isEmpty());
   }
 
   @Test
-  void testCompareSongTitleWithDuplicates()
+  void testGetDuplicatesTracksByNameWithDuplicates()
       throws ParseException, SpotifyWebApiException, IOException {
     final Track song1 = new Track.Builder().setName("Give Me").build();
     final Track song2 = new Track.Builder().setName("Another way").build();
@@ -123,6 +126,29 @@ public class PlaylistUtilityTest {
 
     List<PlaylistTrack> expected = Arrays.asList(track1, track3);
 
-    Assertions.assertIterableEquals(expected, playlistUtility.getDuplicateTrackByName(""));
+    Assertions.assertIterableEquals(expected, playlistUtility.getDuplicatesTracksByName(""));
+  }
+
+  @Test
+  void testGetDuplicatesTracksByNameWithNoDuplicatesExtremeCase()
+      throws ParseException, SpotifyWebApiException, IOException {
+    final Track song1 = new Track.Builder().setName("give me - original version").build();
+    final Track song2 = new Track.Builder().setName("Another way").build();
+    final Track song3 = new Track.Builder().setName("GIVE ME - Extended").build();
+
+    final PlaylistTrack track1 = new PlaylistTrack.Builder().setTrack(song1).build();
+    final PlaylistTrack track2 = new PlaylistTrack.Builder().setTrack(song2).build();
+    final PlaylistTrack track3 = new PlaylistTrack.Builder().setTrack(song3).build();
+
+    PlaylistTrack[] songs = new PlaylistTrack[3];
+    songs[0] = track1;
+    songs[1] = track2;
+    songs[2] = track3;
+
+    Paging<PlaylistTrack> tracks = new Paging.Builder<PlaylistTrack>().setItems(songs).build();
+
+    when(requestHandler.getPlaylistsItems(anyString())).thenReturn(tracks);
+
+    Assertions.assertTrue(playlistUtility.getDuplicatesTracksByName("").isEmpty());
   }
 }
