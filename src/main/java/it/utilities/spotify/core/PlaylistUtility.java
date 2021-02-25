@@ -19,28 +19,46 @@ public class PlaylistUtility {
     this.requestHandler = requestHandler;
   }
 
+  /**
+   * Check if there is any track with the same title (or partially the same) in the Spotify
+   * playlist.<br>
+   * The result of this execution is not 100% correct. You have to manually check if the tracks are
+   * really duplicated.
+   *
+   * @param playListId The ID of the playlist to be checked
+   * @return List of duplicated tracks.
+   * @throws IOException
+   * @throws SpotifyWebApiException
+   * @throws ParseException
+   * @throws NullPointerException if the element returned by the request is null
+   */
   public List<PlaylistTrack> getDuplicatesTracksByName(String playListId)
       throws IOException, SpotifyWebApiException, ParseException {
     final PlaylistTrack[] tracks = this.requestHandler.getPlaylistsItems(playListId).getItems();
 
     List<PlaylistTrack> duplicates = new ArrayList<>();
 
+    // FIXME: find a way to improve performance, because this logic has O (n ^ 2) time complexity
+    // and with huge amount of tracks I think time is a problem
+
     for (int i = 0; i < tracks.length; i++) {
       final PlaylistTrack currentTrack = tracks[i];
 
       boolean duplicate = false;
+      List<PlaylistTrack> others = new ArrayList<>();
 
       for (int j = i + 1; j < tracks.length; j++) {
         final PlaylistTrack track = tracks[j];
 
         if (compareSongTitle(currentTrack.getTrack().getName(), track.getTrack().getName())) {
           duplicate = true;
-          duplicates.add(track);
+          others.add(track);
         }
       }
 
       if (duplicate) {
         duplicates.add(currentTrack);
+        duplicates.addAll(others);
       }
     }
 
