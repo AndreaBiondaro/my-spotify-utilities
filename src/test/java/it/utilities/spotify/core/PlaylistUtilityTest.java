@@ -25,7 +25,7 @@ public class PlaylistUtilityTest {
 
   @InjectMocks private PlaylistUtility playlistUtility;
 
-  @Mock private RequestHandler requestHandler;
+  @Mock private SpotifyApiWrapper spotifyApiWrapper;
 
   @BeforeAll
   static void setup() {
@@ -35,7 +35,7 @@ public class PlaylistUtilityTest {
   @Test
   void testGetDuplicatesTracksByNameNullResponse()
       throws ParseException, SpotifyWebApiException, IOException {
-    when(requestHandler.getPlaylistsItems(anyString())).thenReturn(null);
+    when(spotifyApiWrapper.getPlaylistsItems(anyString())).thenReturn(null);
 
     Assertions.assertThrows(
         NullPointerException.class, () -> playlistUtility.getDuplicatesTracksByName(""));
@@ -46,7 +46,7 @@ public class PlaylistUtilityTest {
       throws ParseException, SpotifyWebApiException, IOException {
     Paging<PlaylistTrack> tracks = new Paging.Builder<PlaylistTrack>().setItems(null).build();
 
-    when(requestHandler.getPlaylistsItems(anyString())).thenReturn(tracks);
+    when(spotifyApiWrapper.getPlaylistsItems(anyString())).thenReturn(tracks);
 
     Assertions.assertThrows(
         NullPointerException.class, () -> playlistUtility.getDuplicatesTracksByName(""));
@@ -61,7 +61,7 @@ public class PlaylistUtilityTest {
 
     Paging<PlaylistTrack> tracks = new Paging.Builder<PlaylistTrack>().setItems(songs).build();
 
-    when(requestHandler.getPlaylistsItems(anyString())).thenReturn(tracks);
+    when(spotifyApiWrapper.getPlaylistsItems(anyString())).thenReturn(tracks);
 
     Assertions.assertThrows(
         NullPointerException.class, () -> playlistUtility.getDuplicatesTracksByName(""));
@@ -79,7 +79,7 @@ public class PlaylistUtilityTest {
 
     Paging<PlaylistTrack> tracks = new Paging.Builder<PlaylistTrack>().setItems(songs).build();
 
-    when(requestHandler.getPlaylistsItems(anyString())).thenReturn(tracks);
+    when(spotifyApiWrapper.getPlaylistsItems(anyString())).thenReturn(tracks);
 
     Assertions.assertThrows(
         NullPointerException.class, () -> playlistUtility.getDuplicatesTracksByName(""));
@@ -99,7 +99,7 @@ public class PlaylistUtilityTest {
 
     Paging<PlaylistTrack> tracks = new Paging.Builder<PlaylistTrack>().setItems(songs).build();
 
-    when(requestHandler.getPlaylistsItems(anyString())).thenReturn(tracks);
+    when(spotifyApiWrapper.getPlaylistsItems(anyString())).thenReturn(tracks);
 
     Assertions.assertTrue(playlistUtility.getDuplicatesTracksByName("").isEmpty());
   }
@@ -122,7 +122,7 @@ public class PlaylistUtilityTest {
 
     Paging<PlaylistTrack> tracks = new Paging.Builder<PlaylistTrack>().setItems(songs).build();
 
-    when(requestHandler.getPlaylistsItems(anyString())).thenReturn(tracks);
+    when(spotifyApiWrapper.getPlaylistsItems(anyString())).thenReturn(tracks);
 
     List<PlaylistTrack> expected = Arrays.asList(track1, track3);
 
@@ -147,7 +147,7 @@ public class PlaylistUtilityTest {
 
     Paging<PlaylistTrack> tracks = new Paging.Builder<PlaylistTrack>().setItems(songs).build();
 
-    when(requestHandler.getPlaylistsItems(anyString())).thenReturn(tracks);
+    when(spotifyApiWrapper.getPlaylistsItems(anyString())).thenReturn(tracks);
 
     Assertions.assertTrue(playlistUtility.getDuplicatesTracksByName("").isEmpty());
   }

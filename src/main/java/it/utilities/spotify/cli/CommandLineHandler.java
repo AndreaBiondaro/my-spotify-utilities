@@ -1,8 +1,15 @@
 package it.utilities.spotify.cli;
 
 import com.wrapper.spotify.SpotifyApi;
+import com.wrapper.spotify.SpotifyHttpManager;
+import com.wrapper.spotify.model_objects.credentials.AuthorizationCodeCredentials;
+import com.wrapper.spotify.model_objects.specification.PlaylistTrack;
 import it.utilities.spotify.core.PlaylistUtility;
-import it.utilities.spotify.core.RequestHandler;
+import it.utilities.spotify.core.SpotifyApiWrapper;
+import java.awt.Desktop;
+import java.io.IOException;
+import java.net.URI;
+import java.util.List;
 import java.util.Scanner;
 import java.util.function.Consumer;
 
@@ -11,15 +18,15 @@ public class CommandLineHandler {
   private boolean running = true;
   private Scanner scanner;
 
-  private SpotifyApi spotifyApi;
-  private RequestHandler requestHandler;
+  private SpotifyApi.Builder builder;
+  private SpotifyApiWrapper spotifyApiWrapper;
   private PlaylistUtility playlistUtility;
 
   public CommandLineHandler() {
     this.scanner = new Scanner(System.in);
-    this.spotifyApi = new SpotifyApi.Builder().build();
-    this.requestHandler = new RequestHandler(this.spotifyApi);
-    this.playlistUtility = new PlaylistUtility(this.requestHandler);
+    this.builder = SpotifyApi.builder();
+    this.spotifyApiWrapper = new SpotifyApiWrapper(this.builder);
+    this.playlistUtility = new PlaylistUtility(this.spotifyApiWrapper);
   }
 
   public static void main(String[] args) {
@@ -57,18 +64,26 @@ public class CommandLineHandler {
 
     //    * --> before access token expire need to make a request to give another one
 
+    // ScheduledExecutorService
+
     switch (command.toLowerCase()) {
       case "manual":
       case "help":
         break;
       case "generate-authorization-url":
+        consumer = generateAuthorizationUrl();
         break;
       case "generate-tokens":
+        consumer = generateTokens();
         break;
       case "use-refresh-token":
+        consumer = useRefreshToken();
         break;
+      case "playlist-duplicate-elements":
+        consumer = getPlaylistDuplicateElements();
       case "exit":
-        consumer = stopReadingInput();
+      case "quit":
+        consumer = terminateExecution();
         break;
       default:
         System.out.println(String.format("The command \"%s\" is not recognized", command));
@@ -87,7 +102,104 @@ public class CommandLineHandler {
     }
   }
 
-  private Consumer stopReadingInput() {
+  private Consumer<String[]> generateAuthorizationUrl() {
+    return args -> {
+      if (args == null || args.length < 3) {
+        System.out.println(
+            "Syntax error. To use this command you need to pass other arguments.\nSyntax: generate-authorization-url <client-id> <client-secret> <redirect-url>");
+      } else {
+        this.builder.setClientId(args[0]);
+        this.builder.setClientSecret(args[1]);
+        this.builder.setRedirectUri(SpotifyHttpManager.makeUri(args[2]));
+
+        URI uri = this.spotifyApiWrapper.authorizationCodeUri();
+
+        if (Desktop.isDesktopSupported()
+            && Desktop.getDesktop().isSupported(Desktop.Action.BROWSE)) {
+          try {
+            Desktop.getDesktop().browse(uri);
+          } catch (IOException e) {
+            System.out.println(uri);
+          }
+        } else {
+          System.out.println(uri);
+        }
+      }
+    };
+  }
+
+  private Consumer<String[]> generateTokens() {
+    return args -> {
+      if (args == null || args.length < 1) {
+        System.out.println(
+            "Syntax error. To use this command you need to pass other arguments.\nSyntax: generate-tokens <code>");
+      } else {
+        AuthorizationCodeCredentials authorizationCodeCredentials = null;
+
+        try {
+          authorizationCodeCredentials = this.spotifyApiWrapper.authorizationCode(args[0]);
+        } catch (Exception e) {
+          System.err.println(e.getMessage());
+          System.out.println("Error while trying to retrieve access tokens. Please try again.");
+        }
+
+        if (authorizationCodeCredentials != null) {
+          this.builder.setAccessToken(authorizationCodeCredentials.getAccessToken());
+          this.builder.setRefreshToken(authorizationCodeCredentials.getRefreshToken());
+          System.out.println("Refresh Token: " + authorizationCodeCredentials.getRefreshToken());
+        }
+      }
+    };
+  }
+
+  private Consumer<String[]> useRefreshToken() {
+    return args -> {
+      if (args == null || args.length < 1) {
+        System.out.println(
+            "Syntax error. To use this command you need to pass other arguments.\nSyntax: use-refresh-token <refresh-code>");
+      } else {
+        this.builder.setRefreshToken(args[0]);
+
+        AuthorizationCodeCredentials authorizationCodeCredentials = null;
+        try {
+          authorizationCodeCredentials = this.spotifyApiWrapper.authorizationCode();
+        } catch (Exception e) {
+          System.err.println(e.getMessage());
+          System.out.println("Error while trying to retrieve access token. Please try again.");
+        }
+
+        if (authorizationCodeCredentials != null) {
+          this.builder.setAccessToken(authorizationCodeCredentials.getAccessToken());
+        }
+      }
+    };
+  }
+
+  private Consumer<String[]> getPlaylistDuplicateElements() {
+    return args -> {
+      if (args == null || args.length < 1) {
+        System.out.println(
+            "Syntax error. To use this command you need to pass other arguments.\nSyntax: playlist-duplicate-elements <playlist-id>");
+      } else {
+        List<PlaylistTrack> tracks = null;
+
+        try {
+          tracks = this.playlistUtility.getDuplicatesTracksByName(args[0]);
+        } catch (Exception e) {
+          System.err.println(e.getMessage());
+          System.out.println("Error while trying to retrieve playlist elements. Please try again.");
+        }
+
+        if (tracks != null && !tracks.isEmpty()) {
+          tracks.stream().forEach(track -> System.out.println(track));
+        } else {
+          System.out.println("Nothing to show");
+        }
+      }
+    };
+  }
+
+  private Consumer terminateExecution() {
     return s -> {
       System.out.print(
           "Are you sure you want to end the session? If you want to open another one you have to re-authenticate. (Y/N) ");

@@ -13,10 +13,10 @@ import org.apache.hc.core5.http.ParseException;
  */
 public class PlaylistUtility {
 
-  private RequestHandler requestHandler;
+  private SpotifyApiWrapper spotifyApiWrapper;
 
-  public PlaylistUtility(RequestHandler requestHandler) {
-    this.requestHandler = requestHandler;
+  public PlaylistUtility(SpotifyApiWrapper spotifyApiWrapper) {
+    this.spotifyApiWrapper = spotifyApiWrapper;
   }
 
   /**
@@ -34,7 +34,7 @@ public class PlaylistUtility {
    */
   public List<PlaylistTrack> getDuplicatesTracksByName(String playListId)
       throws IOException, SpotifyWebApiException, ParseException {
-    final PlaylistTrack[] tracks = this.requestHandler.getPlaylistsItems(playListId).getItems();
+    final PlaylistTrack[] tracks = this.spotifyApiWrapper.getPlaylistsItems(playListId).getItems();
 
     List<PlaylistTrack> duplicates = new ArrayList<>();
 
