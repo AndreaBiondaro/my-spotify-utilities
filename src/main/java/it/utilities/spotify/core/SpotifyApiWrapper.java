@@ -4,6 +4,7 @@ import com.wrapper.spotify.SpotifyApi;
 import com.wrapper.spotify.exceptions.SpotifyWebApiException;
 import com.wrapper.spotify.model_objects.credentials.AuthorizationCodeCredentials;
 import com.wrapper.spotify.model_objects.specification.Paging;
+import com.wrapper.spotify.model_objects.specification.PlaylistSimplified;
 import com.wrapper.spotify.model_objects.specification.PlaylistTrack;
 import com.wrapper.spotify.requests.data.playlists.GetPlaylistsItemsRequest;
 import java.io.IOException;
@@ -16,6 +17,11 @@ public class SpotifyApiWrapper {
 
   public SpotifyApiWrapper(SpotifyApi.Builder builder) {
     this.builder = builder;
+  }
+
+  public Paging<PlaylistSimplified> getListOfCurrentUsersPlaylists()
+      throws ParseException, SpotifyWebApiException, IOException {
+    return this.builder.build().getListOfCurrentUsersPlaylists().build().execute();
   }
 
   public Paging<PlaylistTrack> getPlaylistsItems(String playListId)

@@ -3,14 +3,20 @@ package it.utilities.spotify.cli;
 import com.wrapper.spotify.SpotifyApi;
 import com.wrapper.spotify.SpotifyHttpManager;
 import com.wrapper.spotify.model_objects.credentials.AuthorizationCodeCredentials;
+import com.wrapper.spotify.model_objects.specification.Paging;
+import com.wrapper.spotify.model_objects.specification.PlaylistSimplified;
 import com.wrapper.spotify.model_objects.specification.PlaylistTrack;
 import it.utilities.spotify.core.PlaylistUtility;
 import it.utilities.spotify.core.SpotifyApiWrapper;
 import java.awt.Desktop;
 import java.io.IOException;
 import java.net.URI;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Scanner;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
 public class CommandLineHandler {
@@ -21,6 +27,7 @@ public class CommandLineHandler {
   private SpotifyApi.Builder builder;
   private SpotifyApiWrapper spotifyApiWrapper;
   private PlaylistUtility playlistUtility;
+  private ScheduledExecutorService scheduledExecutorService = Executors.newScheduledThreadPool(1);
 
   public CommandLineHandler() {
     this.scanner = new Scanner(System.in);
@@ -79,8 +86,12 @@ public class CommandLineHandler {
       case "use-refresh-token":
         consumer = useRefreshToken();
         break;
+      case "get-user-playlists":
+        consumer = getUserPlaylists();
+        break;
       case "playlist-duplicate-elements":
         consumer = getPlaylistDuplicateElements();
+        break;
       case "exit":
       case "quit":
         consumer = terminateExecution();
@@ -93,7 +104,9 @@ public class CommandLineHandler {
     if (consumer != null) {
       if (args.length > 1) {
         // Remove the command you typed from the input arguments, because it is not used
-        System.arraycopy(args, 1, args, 0, args.length - 1);
+        String[] newArgs = new String[args.length - 1];
+        System.arraycopy(args, 1, newArgs, 0, args.length - 1);
+        args = newArgs;
       } else {
         args = new String[0];
       }
@@ -102,11 +115,21 @@ public class CommandLineHandler {
     }
   }
 
+  private void scheduleRefreshTokenOperation(Integer time) {
+    this.scheduledExecutorService.schedule(
+        () -> {
+          // TODO refresh access token
+        },
+        time,
+        TimeUnit.MILLISECONDS);
+    // TODO change the time unit to seconds
+  }
+
   private Consumer<String[]> generateAuthorizationUrl() {
     return args -> {
       if (args == null || args.length < 3) {
         System.out.println(
-            "Syntax error. To use this command you need to pass other arguments.\nSyntax: generate-authorization-url <client-id> <client-secret> <redirect-url>");
+            "Syntax error. To use this command you need to pass other arguments.\nSyntax: generate-authorization-url <client-id> <client-secret> <redirect-url> [open-browser]");
       } else {
         this.builder.setClientId(args[0]);
         this.builder.setClientSecret(args[1]);
@@ -114,8 +137,15 @@ public class CommandLineHandler {
 
         URI uri = this.spotifyApiWrapper.authorizationCodeUri();
 
+        // The user can indicate whether he wants to open the browser to authenticate himself or
+        // print the url only on the console.
+        boolean openBrowser =
+            (args.length > 3 && Boolean.TRUE.toString().equalsIgnoreCase(args[3]))
+                || args.length <= 3;
+
         if (Desktop.isDesktopSupported()
-            && Desktop.getDesktop().isSupported(Desktop.Action.BROWSE)) {
+            && Desktop.getDesktop().isSupported(Desktop.Action.BROWSE)
+            && openBrowser) {
           try {
             Desktop.getDesktop().browse(uri);
           } catch (IOException e) {
@@ -147,6 +177,8 @@ public class CommandLineHandler {
           this.builder.setAccessToken(authorizationCodeCredentials.getAccessToken());
           this.builder.setRefreshToken(authorizationCodeCredentials.getRefreshToken());
           System.out.println("Refresh Token: " + authorizationCodeCredentials.getRefreshToken());
+
+          scheduleRefreshTokenOperation(authorizationCodeCredentials.getExpiresIn());
         }
       }
     };
@@ -170,7 +202,26 @@ public class CommandLineHandler {
 
         if (authorizationCodeCredentials != null) {
           this.builder.setAccessToken(authorizationCodeCredentials.getAccessToken());
+          scheduleRefreshTokenOperation(authorizationCodeCredentials.getExpiresIn());
         }
+      }
+    };
+  }
+
+  private Consumer<String[]> getUserPlaylists() {
+    return args -> {
+      Paging<PlaylistSimplified> playlists = null;
+      try {
+        playlists = this.spotifyApiWrapper.getListOfCurrentUsersPlaylists();
+      } catch (Exception e) {
+        System.err.println(
+            String.format(
+                "Error while trying to retrieve user playlists. Error message: %s",
+                e.getMessage()));
+      }
+
+      if (playlists != null && playlists.getItems() != null && playlists.getItems().length > 0) {
+        Arrays.stream(playlists.getItems()).forEach(playlist -> System.out.println(playlist));
       }
     };
   }
